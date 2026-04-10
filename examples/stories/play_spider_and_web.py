@@ -5,13 +5,12 @@ from pathlib import Path
 
 from pyfrotz import ZMachine
 
-
 ROOT = Path(__file__).resolve().parents[2]
-TANGLE_Z8 = ROOT / "tests" / "Tangle.z8"
+SPIDER_AND_WEB_Z5 = ROOT / "stories" / "spider-and-web.z5"
 
 
 def load_story() -> bytes:
-    return TANGLE_Z8.read_bytes()
+    return SPIDER_AND_WEB_Z5.read_bytes()
 
 
 def run_with_scripted_input(story_data: bytes) -> str:
@@ -49,7 +48,7 @@ def run_turn_by_turn(story_data: bytes) -> None:
 def main() -> None:
     story_data = load_story()
 
-    print(f"Loaded: {TANGLE_Z8}")
+    print(f"Loaded: {SPIDER_AND_WEB_Z5}")
     print()
 
     print("=== scripted input example ===")
