@@ -1,6 +1,7 @@
 """Z-Machine virtual machine - the main orchestrator."""
 
 from __future__ import annotations
+import io as IO_module
 import random as pyrandom
 
 from .memory import Memory
@@ -10,7 +11,7 @@ from .text import TextEngine
 from .objects import ObjectTable
 from .dictionary import Dictionary
 from .screen import Screen
-from .io import IO
+from .io import IO, _NeedInput
 from . import instructions as instr
 
 
@@ -25,9 +26,21 @@ def to_unsigned(v: int) -> int:
 
 
 class ZMachine:
-    """The Z-Machine virtual machine."""
+    """The Z-Machine virtual machine.
 
-    def __init__(self, story_data: bytes):
+    For library use, supply *input_lines* and *output* to run
+    non-interactively::
+
+        import io
+        buf = io.StringIO()
+        vm = ZMachine(story_data, input_lines=["look", "quit"], output=buf)
+        vm.run()
+        print(buf.getvalue())
+    """
+
+    def __init__(self, story_data: bytes, *,
+                 input_lines: list[str] | None = None,
+                 output: IO_module.TextIOBase | None = None):
         self.memory = Memory(story_data)
         self.header = Header.from_memory(self.memory)
 
@@ -38,8 +51,8 @@ class ZMachine:
         self.header.setup_interpreter_fields(self.memory)
 
         self.stack = CallStack()
-        self.screen = Screen(self.header.version)
-        self.io = IO()
+        self.screen = Screen(self.header.version, output=output)
+        self.io = IO(input_lines=input_lines)
 
         self.text = TextEngine(
             self.memory, self.header.version,
@@ -69,6 +82,9 @@ class ZMachine:
 
         # Undo state
         self._undo_state: tuple | None = None
+
+        # Step-mode resume callback (set by z_read/z_read_char on _NeedInput)
+        self._input_resume: callable | None = None
 
     # --- Memory access helpers ---
 
@@ -265,6 +281,44 @@ class ZMachine:
         """Main fetch-decode-execute loop."""
         while not self.finished:
             self._execute_one()
+
+    def step(self, command: str | None = None) -> dict[str, object]:
+        """Execute until the next input prompt.
+
+        Call with no argument (or ``None``) for the initial startup turn.
+        Returns a dict with:
+
+        * ``output`` – the text produced during this turn
+        * ``finished`` – whether the game has ended
+
+        Example::
+
+            vm = ZMachine(story_data)
+            result = vm.step()           # startup text
+            result = vm.step("look")     # send a command
+            print(result["output"])
+        """
+        buf = IO_module.StringIO()
+        self.screen._output = buf
+        self.io._step_mode = True
+
+        # If a previous step paused at an input instruction, resume it
+        # with the provided command instead of re-executing instructions.
+        if self._input_resume is not None:
+            if command is None:
+                raise ValueError("VM is waiting for a command")
+            resume = self._input_resume
+            self._input_resume = None
+            resume(command)
+
+        try:
+            while not self.finished:
+                self._execute_one()
+        except _NeedInput:
+            pass
+
+        self.screen.flush()
+        return {"output": buf.getvalue(), "finished": self.finished}
 
     def _execute_one(self):
         """Execute a single instruction."""

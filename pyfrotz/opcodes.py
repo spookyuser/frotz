@@ -439,8 +439,36 @@ def z_put_prop(vm: ZMachine):
     vm.objects.put_prop(vm.operands[0], vm.operands[1], vm.operands[2])
 
 
+def _z_read_finish(vm: ZMachine, text_addr: int, parse_addr: int, line: str):
+    """Complete the z_read opcode after input is available."""
+    line = line.lower()
+
+    if vm.header.version <= 4:
+        max_len = vm.memory.read_byte(text_addr)
+        line = line[:max_len]
+        for i, c in enumerate(line):
+            zscii = vm.text.char_to_zscii(c)
+            vm.memory.write_byte(text_addr + 1 + i, zscii)
+        vm.memory.write_byte(text_addr + 1 + len(line), 0)
+    else:
+        max_len = vm.memory.read_byte(text_addr)
+        line = line[:max_len]
+        vm.memory.write_byte(text_addr + 1, len(line))
+        for i, c in enumerate(line):
+            zscii = vm.text.char_to_zscii(c)
+            vm.memory.write_byte(text_addr + 2 + i, zscii)
+
+    if parse_addr != 0:
+        vm.dictionary.tokenize(text_addr, parse_addr)
+
+    if vm.header.version >= 5:
+        vm.store_result(13)
+
+
 def z_read(vm: ZMachine):
     """Read a line of input and tokenize."""
+    from .io import _NeedInput
+
     text_addr = vm.operands[0]
     parse_addr = vm.operands[1] if vm.operand_count > 1 else 0
 
@@ -452,36 +480,13 @@ def z_read(vm: ZMachine):
     vm.screen.flush()
 
     # Read input
-    line = vm.io.read_line()
+    try:
+        line = vm.io.read_line()
+    except _NeedInput:
+        vm._input_resume = lambda cmd: _z_read_finish(vm, text_addr, parse_addr, cmd)
+        raise
 
-    # Convert to lowercase
-    line = line.lower()
-
-    # Store in text buffer
-    if vm.header.version <= 4:
-        # V1-V4: byte 0 = max length, text starts at byte 1, null-terminated
-        max_len = vm.memory.read_byte(text_addr)
-        line = line[:max_len]
-        for i, c in enumerate(line):
-            zscii = vm.text.char_to_zscii(c)
-            vm.memory.write_byte(text_addr + 1 + i, zscii)
-        vm.memory.write_byte(text_addr + 1 + len(line), 0)
-    else:
-        # V5+: byte 0 = max length, byte 1 = actual length, text starts at byte 2
-        max_len = vm.memory.read_byte(text_addr)
-        line = line[:max_len]
-        vm.memory.write_byte(text_addr + 1, len(line))
-        for i, c in enumerate(line):
-            zscii = vm.text.char_to_zscii(c)
-            vm.memory.write_byte(text_addr + 2 + i, zscii)
-
-    # Tokenize if parse buffer provided
-    if parse_addr != 0:
-        vm.dictionary.tokenize(text_addr, parse_addr)
-
-    # V5+ stores the terminating key
-    if vm.header.version >= 5:
-        vm.store_result(13)  # Return key
+    _z_read_finish(vm, text_addr, parse_addr, line)
 
 
 def z_print_char(vm: ZMachine):
@@ -580,8 +585,18 @@ def z_sound_effect(vm: ZMachine):
 
 def z_read_char(vm: ZMachine):
     """Read a single character."""
+    from .io import _NeedInput
+
     vm.screen.flush()
-    key = vm.io.read_char()
+
+    try:
+        key = vm.io.read_char()
+    except _NeedInput:
+        vm._input_resume = lambda cmd: vm.store_result(
+            13 if not cmd else ord(cmd[0])
+        )
+        raise
+
     vm.store_result(key)
 
 

@@ -1,13 +1,24 @@
 """Z-Machine screen model (dumb terminal mode)."""
 
 from __future__ import annotations
+import io
 import sys
 
 
 class Screen:
-    """Manages the Z-machine screen output in dumb terminal mode."""
+    """Manages the Z-machine screen output in dumb terminal mode.
 
-    def __init__(self, version: int, width: int = 80):
+    For library use, pass *output* to capture text instead of printing
+    to stdout::
+
+        buf = io.StringIO()
+        screen = Screen(version=5, output=buf)
+        # ... run the VM ...
+        print(buf.getvalue())
+    """
+
+    def __init__(self, version: int, width: int = 80,
+                 output: io.TextIOBase | None = None):
         self.version = version
         self.width = width
         self.current_window = 0  # 0=lower, 1=upper
@@ -15,12 +26,21 @@ class Screen:
         self.buffered = True
         self._buffer = ""
         self._column = 0
+        self._output = output
         self.transcript_file = None
         self.command_file = None
         self._output_streams: set[int] = {1}  # Stream 1 (screen) on by default
         self._memory_streams: list[tuple[int, int]] = []  # (addr, original_addr) stack
         self._memory_stream_data: list[list[int]] = []
         self._memory = None
+
+    def _write(self, text: str):
+        """Write text to the output destination."""
+        if self._output is not None:
+            self._output.write(text)
+        else:
+            sys.stdout.write(text)
+            sys.stdout.flush()
 
     def print_char(self, c: str):
         """Print a single character to active output streams."""
@@ -43,12 +63,16 @@ class Screen:
 
     def _screen_print(self, c: str):
         """Output a character to the screen."""
+        # In dumb terminal mode, suppress upper window output since we
+        # cannot position the cursor. The status line info is already
+        # part of the game's normal lower window output.
+        if self.current_window == 1:
+            return
         if c == "\n":
-            sys.stdout.write(self._buffer + "\n")
-            sys.stdout.flush()
+            self._write(self._buffer + "\n")
             self._buffer = ""
             self._column = 0
-        elif self.buffered and self.current_window == 0:
+        elif self.buffered:
             self._buffer += c
             self._column += 1
             # Word wrap
@@ -56,23 +80,20 @@ class Screen:
                 # Find last space for word wrap
                 last_space = self._buffer.rfind(" ")
                 if last_space > 0:
-                    sys.stdout.write(self._buffer[:last_space] + "\n")
+                    self._write(self._buffer[:last_space] + "\n")
                     self._buffer = self._buffer[last_space + 1:]
                 else:
-                    sys.stdout.write(self._buffer + "\n")
+                    self._write(self._buffer + "\n")
                     self._buffer = ""
                 self._column = len(self._buffer)
-                sys.stdout.flush()
         else:
-            sys.stdout.write(c)
+            self._write(c)
             self._column += 1
-            sys.stdout.flush()
 
     def flush(self):
         """Flush any buffered output."""
         if self._buffer:
-            sys.stdout.write(self._buffer)
-            sys.stdout.flush()
+            self._write(self._buffer)
             self._buffer = ""
 
     def new_line(self):
@@ -131,7 +152,8 @@ class Screen:
                 self._memory_stream_data.append([])
         elif stream < 0:
             s = -stream
-            self._output_streams.discard(s)
+            if s != 3:
+                self._output_streams.discard(s)
             if s == 3 and self._memory_stream_data:
                 data = self._memory_stream_data.pop()
                 table_addr, orig_addr = self._memory_streams.pop()
@@ -139,6 +161,8 @@ class Screen:
                     self._memory.write_word(orig_addr, len(data))
                     for i, ch in enumerate(data):
                         self._memory.write_byte(table_addr + i, ch)
+                if not self._memory_stream_data:
+                    self._output_streams.discard(3)
 
     def input_stream(self, stream: int):
         """Select input stream (0=keyboard, 1=file). Mostly no-op."""
@@ -153,5 +177,4 @@ class Screen:
         if padding < 1:
             padding = 1
         line = status + " " * padding + score_or_time
-        sys.stdout.write("\n[" + line[:self.width - 2] + "]\n")
-        sys.stdout.flush()
+        self._write("\n[" + line[:self.width - 2] + "]\n")

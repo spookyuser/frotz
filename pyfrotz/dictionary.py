@@ -54,9 +54,9 @@ class Dictionary:
                 if match == 0:
                     return entry_addr
                 elif match < 0:
-                    low = mid + 1
-                else:
                     high = mid - 1
+                else:
+                    low = mid + 1
         else:
             # Unsorted - linear search
             for i in range(count):
@@ -142,8 +142,7 @@ class Dictionary:
                 self.memory.write_word(entry_addr, entry)
 
             self.memory.write_byte(entry_addr + 2, word_len)
-            self.memory.write_byte(entry_addr + 3, word_start - text_addr +
-                                   (1 if self.version <= 4 else 2))
+            self.memory.write_byte(entry_addr + 3, word_start - text_addr)
 
     def _split_tokens(self, chars: list[int], text_start: int
                       ) -> list[tuple[str, int, int]]:
