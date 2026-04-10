@@ -11,7 +11,7 @@ from .text import TextEngine
 from .objects import ObjectTable
 from .dictionary import Dictionary
 from .screen import Screen
-from .io import IO
+from .io import IO, _NeedInput
 from . import instructions as instr
 
 
@@ -82,6 +82,9 @@ class ZMachine:
 
         # Undo state
         self._undo_state: tuple | None = None
+
+        # Step-mode resume callback (set by z_read/z_read_char on _NeedInput)
+        self._input_resume: callable | None = None
 
     # --- Memory access helpers ---
 
@@ -278,6 +281,44 @@ class ZMachine:
         """Main fetch-decode-execute loop."""
         while not self.finished:
             self._execute_one()
+
+    def step(self, command: str | None = None) -> dict[str, object]:
+        """Execute until the next input prompt.
+
+        Call with no argument (or ``None``) for the initial startup turn.
+        Returns a dict with:
+
+        * ``output`` – the text produced during this turn
+        * ``finished`` – whether the game has ended
+
+        Example::
+
+            vm = ZMachine(story_data)
+            result = vm.step()           # startup text
+            result = vm.step("look")     # send a command
+            print(result["output"])
+        """
+        buf = IO_module.StringIO()
+        self.screen._output = buf
+        self.io._step_mode = True
+
+        # If a previous step paused at an input instruction, resume it
+        # with the provided command instead of re-executing instructions.
+        if self._input_resume is not None:
+            if command is None:
+                raise ValueError("VM is waiting for a command")
+            resume = self._input_resume
+            self._input_resume = None
+            resume(command)
+
+        try:
+            while not self.finished:
+                self._execute_one()
+        except _NeedInput:
+            pass
+
+        self.screen.flush()
+        return {"output": buf.getvalue(), "finished": self.finished}
 
     def _execute_one(self):
         """Execute a single instruction."""
