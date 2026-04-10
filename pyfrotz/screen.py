@@ -43,12 +43,17 @@ class Screen:
 
     def _screen_print(self, c: str):
         """Output a character to the screen."""
+        # In dumb terminal mode, suppress upper window output since we
+        # cannot position the cursor. The status line info is already
+        # part of the game's normal lower window output.
+        if self.current_window == 1:
+            return
         if c == "\n":
             sys.stdout.write(self._buffer + "\n")
             sys.stdout.flush()
             self._buffer = ""
             self._column = 0
-        elif self.buffered and self.current_window == 0:
+        elif self.buffered:
             self._buffer += c
             self._column += 1
             # Word wrap
