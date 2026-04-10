@@ -38,9 +38,13 @@ class ZMachine:
         print(buf.getvalue())
     """
 
-    def __init__(self, story_data: bytes, *,
-                 input_lines: list[str] | None = None,
-                 output: IO_module.TextIOBase | None = None):
+    def __init__(
+        self,
+        story_data: bytes,
+        *,
+        input_lines: list[str] | None = None,
+        output: IO_module.TextIOBase | None = None,
+    ):
         self.memory = Memory(story_data)
         self.header = Header.from_memory(self.memory)
 
@@ -55,16 +59,22 @@ class ZMachine:
         self.io = IO(input_lines=input_lines)
 
         self.text = TextEngine(
-            self.memory, self.header.version,
-            self.header.abbreviations, self.header.alphabet,
+            self.memory,
+            self.header.version,
+            self.header.abbreviations,
+            self.header.alphabet,
         )
         self.objects = ObjectTable(
-            self.memory, self.header.version,
-            self.header.objects, self.text,
+            self.memory,
+            self.header.version,
+            self.header.objects,
+            self.text,
         )
         self.dictionary = Dictionary(
-            self.memory, self.header.version,
-            self.header.dictionary, self.text,
+            self.memory,
+            self.header.version,
+            self.header.dictionary,
+            self.text,
         )
 
         self.pc = self.header.start_pc
@@ -224,8 +234,13 @@ class ZMachine:
         else:
             return packed * 8
 
-    def call_routine(self, packed_addr: int, args: list[int],
-                     store_var: int | None, discard: bool = False):
+    def call_routine(
+        self,
+        packed_addr: int,
+        args: list[int],
+        store_var: int | None,
+        discard: bool = False,
+    ):
         """Call a routine at the given packed address."""
         if packed_addr == 0:
             # Calling address 0 returns false
@@ -241,7 +256,9 @@ class ZMachine:
         num_locals = self.fetch_byte()
 
         if num_locals > 15:
-            raise RuntimeError(f"Routine at {byte_addr:#x} has {num_locals} locals (max 15)")
+            raise RuntimeError(
+                f"Routine at {byte_addr:#x} has {num_locals} locals (max 15)"
+            )
 
         # Initialize local variables
         local_vars = []
@@ -395,34 +412,44 @@ class ZMachine:
     # --- Opcode dispatch ---
 
     def _dispatch_0op(self, opcode: int):
-        from . import opcodes
+
         handler = _0OP_TABLE.get(opcode)
         if handler is None:
-            raise RuntimeError(f"Unimplemented 0OP opcode: {opcode:#x} at PC {self.pc:#x}")
+            raise RuntimeError(
+                f"Unimplemented 0OP opcode: {opcode:#x} at PC {self.pc:#x}"
+            )
         handler(self)
 
     def _dispatch_1op(self, opcode: int):
         handler = _1OP_TABLE.get(opcode)
         if handler is None:
-            raise RuntimeError(f"Unimplemented 1OP opcode: {opcode:#x} at PC {self.pc:#x}")
+            raise RuntimeError(
+                f"Unimplemented 1OP opcode: {opcode:#x} at PC {self.pc:#x}"
+            )
         handler(self)
 
     def _dispatch_2op(self, opcode: int):
         handler = _2OP_TABLE.get(opcode)
         if handler is None:
-            raise RuntimeError(f"Unimplemented 2OP opcode: {opcode:#x} at PC {self.pc:#x}")
+            raise RuntimeError(
+                f"Unimplemented 2OP opcode: {opcode:#x} at PC {self.pc:#x}"
+            )
         handler(self)
 
     def _dispatch_var(self, opcode: int):
         handler = _VAR_TABLE.get(opcode)
         if handler is None:
-            raise RuntimeError(f"Unimplemented VAR opcode: {opcode:#x} at PC {self.pc:#x}")
+            raise RuntimeError(
+                f"Unimplemented VAR opcode: {opcode:#x} at PC {self.pc:#x}"
+            )
         handler(self)
 
     def _dispatch_ext(self, opcode: int):
         handler = _EXT_TABLE.get(opcode)
         if handler is None:
-            raise RuntimeError(f"Unimplemented EXT opcode: {opcode:#x} at PC {self.pc:#x}")
+            raise RuntimeError(
+                f"Unimplemented EXT opcode: {opcode:#x} at PC {self.pc:#x}"
+            )
         handler(self)
 
 
@@ -439,126 +466,136 @@ def _register_opcodes():
     from . import opcodes as op
 
     # 0OP opcodes (0xB0-0xBF)
-    _0OP_TABLE.update({
-        0x00: op.z_rtrue,
-        0x01: op.z_rfalse,
-        0x02: op.z_print,
-        0x03: op.z_print_ret,
-        0x04: op.z_nop,
-        0x05: op.z_save_v3,
-        0x06: op.z_restore_v3,
-        0x07: op.z_restart,
-        0x08: op.z_ret_popped,
-        0x09: op.z_pop_or_catch,
-        0x0A: op.z_quit,
-        0x0B: op.z_new_line,
-        0x0C: op.z_show_status,
-        0x0D: op.z_verify,
-        # 0x0E: extended (handled separately)
-        0x0F: op.z_piracy,
-    })
+    _0OP_TABLE.update(
+        {
+            0x00: op.z_rtrue,
+            0x01: op.z_rfalse,
+            0x02: op.z_print,
+            0x03: op.z_print_ret,
+            0x04: op.z_nop,
+            0x05: op.z_save_v3,
+            0x06: op.z_restore_v3,
+            0x07: op.z_restart,
+            0x08: op.z_ret_popped,
+            0x09: op.z_pop_or_catch,
+            0x0A: op.z_quit,
+            0x0B: op.z_new_line,
+            0x0C: op.z_show_status,
+            0x0D: op.z_verify,
+            # 0x0E: extended (handled separately)
+            0x0F: op.z_piracy,
+        }
+    )
 
     # 1OP opcodes (0x80-0x8F)
-    _1OP_TABLE.update({
-        0x00: op.z_jz,
-        0x01: op.z_get_sibling,
-        0x02: op.z_get_child,
-        0x03: op.z_get_parent,
-        0x04: op.z_get_prop_len,
-        0x05: op.z_inc,
-        0x06: op.z_dec,
-        0x07: op.z_print_addr,
-        0x08: op.z_call_s,      # 1OP form
-        0x09: op.z_remove_obj,
-        0x0A: op.z_print_obj,
-        0x0B: op.z_ret,
-        0x0C: op.z_jump,
-        0x0D: op.z_print_paddr,
-        0x0E: op.z_load,
-        0x0F: op.z_not_or_call_n,
-    })
+    _1OP_TABLE.update(
+        {
+            0x00: op.z_jz,
+            0x01: op.z_get_sibling,
+            0x02: op.z_get_child,
+            0x03: op.z_get_parent,
+            0x04: op.z_get_prop_len,
+            0x05: op.z_inc,
+            0x06: op.z_dec,
+            0x07: op.z_print_addr,
+            0x08: op.z_call_s,  # 1OP form
+            0x09: op.z_remove_obj,
+            0x0A: op.z_print_obj,
+            0x0B: op.z_ret,
+            0x0C: op.z_jump,
+            0x0D: op.z_print_paddr,
+            0x0E: op.z_load,
+            0x0F: op.z_not_or_call_n,
+        }
+    )
 
     # 2OP opcodes - these are in the first 0x20 entries of var_opcodes in C
     # In our design we dispatch them separately
-    _2OP_TABLE.update({
-        0x01: op.z_je,
-        0x02: op.z_jl,
-        0x03: op.z_jg,
-        0x04: op.z_dec_chk,
-        0x05: op.z_inc_chk,
-        0x06: op.z_jin,
-        0x07: op.z_test,
-        0x08: op.z_or,
-        0x09: op.z_and,
-        0x0A: op.z_test_attr,
-        0x0B: op.z_set_attr,
-        0x0C: op.z_clear_attr,
-        0x0D: op.z_store,
-        0x0E: op.z_insert_obj,
-        0x0F: op.z_loadw,
-        0x10: op.z_loadb,
-        0x11: op.z_get_prop,
-        0x12: op.z_get_prop_addr,
-        0x13: op.z_get_next_prop,
-        0x14: op.z_add,
-        0x15: op.z_sub,
-        0x16: op.z_mul,
-        0x17: op.z_div,
-        0x18: op.z_mod,
-        0x19: op.z_call_s,      # 2OP form (V4+)
-        0x1A: op.z_call_n,      # 2OP form (V5+)
-        0x1B: op.z_set_colour,
-        0x1C: op.z_throw,
-    })
+    _2OP_TABLE.update(
+        {
+            0x01: op.z_je,
+            0x02: op.z_jl,
+            0x03: op.z_jg,
+            0x04: op.z_dec_chk,
+            0x05: op.z_inc_chk,
+            0x06: op.z_jin,
+            0x07: op.z_test,
+            0x08: op.z_or,
+            0x09: op.z_and,
+            0x0A: op.z_test_attr,
+            0x0B: op.z_set_attr,
+            0x0C: op.z_clear_attr,
+            0x0D: op.z_store,
+            0x0E: op.z_insert_obj,
+            0x0F: op.z_loadw,
+            0x10: op.z_loadb,
+            0x11: op.z_get_prop,
+            0x12: op.z_get_prop_addr,
+            0x13: op.z_get_next_prop,
+            0x14: op.z_add,
+            0x15: op.z_sub,
+            0x16: op.z_mul,
+            0x17: op.z_div,
+            0x18: op.z_mod,
+            0x19: op.z_call_s,  # 2OP form (V4+)
+            0x1A: op.z_call_n,  # 2OP form (V5+)
+            0x1B: op.z_set_colour,
+            0x1C: op.z_throw,
+        }
+    )
 
     # VAR opcodes (0xE0-0xFF, indexed as 0x00-0x3F)
-    _VAR_TABLE.update({
-        0x00: op.z_call_s,       # VAR form
-        0x01: op.z_storew,
-        0x02: op.z_storeb,
-        0x03: op.z_put_prop,
-        0x04: op.z_read,
-        0x05: op.z_print_char,
-        0x06: op.z_print_num,
-        0x07: op.z_random,
-        0x08: op.z_push,
-        0x09: op.z_pull,
-        0x0A: op.z_split_window,
-        0x0B: op.z_set_window,
-        0x0C: op.z_call_s,      # call_vs2
-        0x0D: op.z_erase_window,
-        0x0E: op.z_erase_line,
-        0x0F: op.z_set_cursor,
-        0x10: op.z_get_cursor,
-        0x11: op.z_set_text_style,
-        0x12: op.z_buffer_mode,
-        0x13: op.z_output_stream,
-        0x14: op.z_input_stream,
-        0x15: op.z_sound_effect,
-        0x16: op.z_read_char,
-        0x17: op.z_scan_table,
-        0x18: op.z_not,
-        0x19: op.z_call_n,      # call_vn
-        0x1A: op.z_call_n,      # call_vn2
-        0x1B: op.z_tokenise,
-        0x1C: op.z_encode_text,
-        0x1D: op.z_copy_table,
-        0x1E: op.z_print_table,
-        0x1F: op.z_check_arg_count,
-    })
+    _VAR_TABLE.update(
+        {
+            0x00: op.z_call_s,  # VAR form
+            0x01: op.z_storew,
+            0x02: op.z_storeb,
+            0x03: op.z_put_prop,
+            0x04: op.z_read,
+            0x05: op.z_print_char,
+            0x06: op.z_print_num,
+            0x07: op.z_random,
+            0x08: op.z_push,
+            0x09: op.z_pull,
+            0x0A: op.z_split_window,
+            0x0B: op.z_set_window,
+            0x0C: op.z_call_s,  # call_vs2
+            0x0D: op.z_erase_window,
+            0x0E: op.z_erase_line,
+            0x0F: op.z_set_cursor,
+            0x10: op.z_get_cursor,
+            0x11: op.z_set_text_style,
+            0x12: op.z_buffer_mode,
+            0x13: op.z_output_stream,
+            0x14: op.z_input_stream,
+            0x15: op.z_sound_effect,
+            0x16: op.z_read_char,
+            0x17: op.z_scan_table,
+            0x18: op.z_not,
+            0x19: op.z_call_n,  # call_vn
+            0x1A: op.z_call_n,  # call_vn2
+            0x1B: op.z_tokenise,
+            0x1C: op.z_encode_text,
+            0x1D: op.z_copy_table,
+            0x1E: op.z_print_table,
+            0x1F: op.z_check_arg_count,
+        }
+    )
 
     # EXT opcodes (V5+)
-    _EXT_TABLE.update({
-        0x00: op.z_save,
-        0x01: op.z_restore,
-        0x02: op.z_log_shift,
-        0x03: op.z_art_shift,
-        0x04: op.z_set_font,
-        0x09: op.z_save_undo,
-        0x0A: op.z_restore_undo,
-        0x0B: op.z_print_unicode,
-        0x0C: op.z_check_unicode,
-    })
+    _EXT_TABLE.update(
+        {
+            0x00: op.z_save,
+            0x01: op.z_restore,
+            0x02: op.z_log_shift,
+            0x03: op.z_art_shift,
+            0x04: op.z_set_font,
+            0x09: op.z_save_undo,
+            0x0A: op.z_restore_undo,
+            0x0B: op.z_print_unicode,
+            0x0C: op.z_check_unicode,
+        }
+    )
 
 
 _register_opcodes()

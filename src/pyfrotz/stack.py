@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 @dataclass
 class RoutineFrame:
     """A single call stack frame."""
+
     return_pc: int
     local_vars: list[int] = field(default_factory=list)
     eval_stack: list[int] = field(default_factory=list)
@@ -27,9 +28,14 @@ class CallStack:
     def current_frame(self) -> RoutineFrame:
         return self.frames[-1]
 
-    def push_frame(self, return_pc: int, local_vars: list[int],
-                   arg_count: int, store_var: int | None,
-                   discard_result: bool = False):
+    def push_frame(
+        self,
+        return_pc: int,
+        local_vars: list[int],
+        arg_count: int,
+        store_var: int | None,
+        discard_result: bool = False,
+    ):
         frame = RoutineFrame(
             return_pc=return_pc,
             local_vars=local_vars,
@@ -77,9 +83,11 @@ class CallStack:
     def get_state(self) -> list[RoutineFrame]:
         """Return copy of frames for save/undo."""
         import copy
+
         return copy.deepcopy(self.frames)
 
     def set_state(self, frames: list[RoutineFrame]):
         """Restore frames from save/undo."""
         import copy
+
         self.frames = copy.deepcopy(frames)

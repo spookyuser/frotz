@@ -35,20 +35,20 @@ class Memory:
         self._data[addr + 1] = val & 0xFF
 
     def slice(self, addr: int, length: int) -> bytes:
-        return bytes(self._data[addr:addr + length])
+        return bytes(self._data[addr : addr + length])
 
     def restart(self):
         """Restore dynamic memory to its original state."""
         if self._original_dynamic is not None:
-            self._data[:self._static_base] = self._original_dynamic
+            self._data[: self._static_base] = self._original_dynamic
 
     def get_dynamic_state(self) -> bytes:
         """Return current dynamic memory for save/undo."""
-        return bytes(self._data[:self._static_base])
+        return bytes(self._data[: self._static_base])
 
     def set_dynamic_state(self, data: bytes):
         """Restore dynamic memory from save/undo."""
-        self._data[:len(data)] = data
+        self._data[: len(data)] = data
 
     @classmethod
     def from_file(cls, path: str) -> Memory:

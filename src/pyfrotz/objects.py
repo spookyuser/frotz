@@ -25,8 +25,9 @@ O4_SIZE = 14
 class ObjectTable:
     """Manages the Z-machine object table."""
 
-    def __init__(self, memory: Memory, version: int, objects_addr: int,
-                 text_engine: TextEngine):
+    def __init__(
+        self, memory: Memory, version: int, objects_addr: int, text_engine: TextEngine
+    ):
         self.memory = memory
         self.version = version
         self.objects_addr = objects_addr

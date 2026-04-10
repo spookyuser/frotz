@@ -33,27 +33,39 @@ COUNT_EXT = 4
 
 # Which 2OP opcodes store a result
 STORE_2OP = {
-    0x08, 0x09,             # or, and
-    0x0F, 0x10,             # loadw, loadb
-    0x11, 0x12, 0x13,       # get_prop, get_prop_addr, get_next_prop
-    0x14, 0x15, 0x16, 0x17, 0x18,  # add, sub, mul, div, mod
+    0x08,
+    0x09,  # or, and
+    0x0F,
+    0x10,  # loadw, loadb
+    0x11,
+    0x12,
+    0x13,  # get_prop, get_prop_addr, get_next_prop
+    0x14,
+    0x15,
+    0x16,
+    0x17,
+    0x18,  # add, sub, mul, div, mod
 }
 
 # Which 1OP opcodes store a result
 STORE_1OP = {
-    0x01, 0x02, 0x03, 0x04,  # get_sibling, get_child, get_parent, get_prop_len
-    0x08,                     # call_s (1OP)
-    0x0E, 0x0F,              # load (and call_n has no store)
+    0x01,
+    0x02,
+    0x03,
+    0x04,  # get_sibling, get_child, get_parent, get_prop_len
+    0x08,  # call_s (1OP)
+    0x0E,
+    0x0F,  # load (and call_n has no store)
 }
 
 # Which 0OP opcodes store a result: none normally (save/restore in V4+ but handled separately)
 
 # Which VAR opcodes store a result
 STORE_VAR = {
-    0x00,                    # call_s
-    0x04,                    # read (V5+ only, but we'll check version)
-    0x07,                    # random
-    0x08,                    # push? no - push doesn't store. Actually:
+    0x00,  # call_s
+    0x04,  # read (V5+ only, but we'll check version)
+    0x07,  # random
+    0x08,  # push? no - push doesn't store. Actually:
     # Let me be more precise:
 }
 
@@ -62,10 +74,14 @@ STORE_VAR = {
 
 # 2OP opcodes that branch
 BRANCH_2OP = {
-    0x01, 0x02, 0x03,  # je, jl, jg
-    0x04, 0x05,         # dec_chk, inc_chk
-    0x06, 0x07,         # jin, test
-    0x0A,               # test_attr
+    0x01,
+    0x02,
+    0x03,  # je, jl, jg
+    0x04,
+    0x05,  # dec_chk, inc_chk
+    0x06,
+    0x07,  # jin, test
+    0x0A,  # test_attr
 }
 
 # 1OP opcodes that branch
@@ -77,9 +93,10 @@ BRANCH_1OP = {
 
 # 0OP opcodes that branch
 BRANCH_0OP = {
-    0x05, 0x06,  # save, restore (V3 only - branch; V4+ store)
-    0x0D,        # verify
-    0x0F,        # piracy
+    0x05,
+    0x06,  # save, restore (V3 only - branch; V4+ store)
+    0x0D,  # verify
+    0x0F,  # piracy
 }
 
 

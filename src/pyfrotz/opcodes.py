@@ -5,9 +5,8 @@ Operands are in vm.operands, count in vm.operand_count.
 """
 
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
-import sys
-import os
 
 if TYPE_CHECKING:
     from .zmachine import ZMachine
@@ -24,6 +23,7 @@ def to_unsigned(v: int) -> int:
 # ============================================================
 # 0OP opcodes
 # ============================================================
+
 
 def z_rtrue(vm: ZMachine):
     vm.do_return(1)
@@ -148,6 +148,7 @@ def z_piracy(vm: ZMachine):
 # 1OP opcodes
 # ============================================================
 
+
 def z_jz(vm: ZMachine):
     """Branch if value is zero."""
     vm.do_branch(vm.operands[0] == 0)
@@ -262,6 +263,7 @@ def z_not_or_call_n(vm: ZMachine):
 # 2OP opcodes
 # ============================================================
 
+
 def z_je(vm: ZMachine):
     """Branch if first operand equals any subsequent operand."""
     a = vm.operands[0]
@@ -316,7 +318,11 @@ def z_and(vm: ZMachine):
 
 def z_test_attr(vm: ZMachine):
     """Branch if object has attribute."""
-    result = vm.objects.get_attr(vm.operands[0], vm.operands[1]) if vm.operands[0] != 0 else False
+    result = (
+        vm.objects.get_attr(vm.operands[0], vm.operands[1])
+        if vm.operands[0] != 0
+        else False
+    )
     vm.do_branch(result)
 
 
@@ -423,6 +429,7 @@ def z_throw(vm: ZMachine):
 # VAR opcodes
 # ============================================================
 
+
 def z_storew(vm: ZMachine):
     """Store word in array."""
     addr = (vm.operands[0] + 2 * vm.operands[1]) & 0xFFFF
@@ -509,7 +516,7 @@ def z_random(vm: ZMachine):
             vm._rng_sequential = False
         else:
             vm._rng = __import__("random").Random(-r)
-            vm._rng_sequential = (-r <= 1000)
+            vm._rng_sequential = -r <= 1000
             if vm._rng_sequential:
                 vm._rng_counter = 0
                 vm._rng_range = -r
@@ -592,9 +599,7 @@ def z_read_char(vm: ZMachine):
     try:
         key = vm.io.read_char()
     except _NeedInput:
-        vm._input_resume = lambda cmd: vm.store_result(
-            13 if not cmd else ord(cmd[0])
-        )
+        vm._input_resume = lambda cmd: vm.store_result(13 if not cmd else ord(cmd[0]))
         raise
 
     vm.store_result(key)
@@ -716,6 +721,7 @@ def z_check_arg_count(vm: ZMachine):
 # EXT opcodes (V5+)
 # ============================================================
 
+
 def z_save(vm: ZMachine):
     """Save game state (EXT form, V5+)."""
     vm.screen.flush()
@@ -726,6 +732,7 @@ def z_save(vm: ZMachine):
         if not filename:
             filename = "save.pyfz"
         from .quetzal import save_game
+
         success = save_game(vm, filename)
         vm.store_result(1 if success else 0)
     except Exception:
@@ -742,6 +749,7 @@ def z_restore(vm: ZMachine):
         if not filename:
             filename = "save.pyfz"
         from .quetzal import restore_game
+
         success = restore_game(vm, filename)
         if success:
             # After restore, the store_result is for the *restored* instruction
@@ -787,6 +795,7 @@ def z_set_font(vm: ZMachine):
 def z_save_undo(vm: ZMachine):
     """Save undo state."""
     import copy
+
     vm._undo_state = (
         vm.memory.get_dynamic_state(),
         copy.deepcopy(vm.stack.frames),
@@ -805,6 +814,7 @@ def z_restore_undo(vm: ZMachine):
     vm.memory.set_dynamic_state(dynamic_mem)
     vm.header.setup_interpreter_fields(vm.memory)
     import copy
+
     vm.stack.frames = copy.deepcopy(frames)
     vm.pc = pc
     vm.store_result(2)  # Restored
@@ -815,7 +825,7 @@ def z_print_unicode(vm: ZMachine):
     code = vm.operands[0]
     try:
         vm.screen.print_str(chr(code))
-    except (ValueError, OverflowError):
+    except ValueError, OverflowError:
         vm.screen.print_str("?")
 
 

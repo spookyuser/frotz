@@ -11,8 +11,9 @@ if TYPE_CHECKING:
 class Dictionary:
     """Handles Z-machine dictionary lookup and input tokenization."""
 
-    def __init__(self, memory: Memory, version: int, dict_addr: int,
-                 text_engine: TextEngine):
+    def __init__(
+        self, memory: Memory, version: int, dict_addr: int, text_engine: TextEngine
+    ):
         self.memory = memory
         self.version = version
         self.dict_addr = dict_addr
@@ -66,8 +67,9 @@ class Dictionary:
 
         return 0
 
-    def _compare_entry(self, entry_addr: int, encoded: list[int],
-                       resolution: int) -> int:
+    def _compare_entry(
+        self, entry_addr: int, encoded: list[int], resolution: int
+    ) -> int:
         """Compare encoded text with dictionary entry. Returns <0, 0, >0."""
         for i in range(resolution):
             entry_word = self.memory.read_word(entry_addr + 2 * i)
@@ -77,8 +79,9 @@ class Dictionary:
                 return 1
         return 0
 
-    def tokenize(self, text_addr: int, parse_addr: int,
-                 dict_addr: int = 0, flag: bool = False):
+    def tokenize(
+        self, text_addr: int, parse_addr: int, dict_addr: int = 0, flag: bool = False
+    ):
         """Tokenize input text and fill the parse buffer.
 
         text_addr: address of text buffer (byte 0=max, byte 1=actual length in V5+)
@@ -144,8 +147,9 @@ class Dictionary:
             self.memory.write_byte(entry_addr + 2, word_len)
             self.memory.write_byte(entry_addr + 3, word_start - text_addr)
 
-    def _split_tokens(self, chars: list[int], text_start: int
-                      ) -> list[tuple[str, int, int]]:
+    def _split_tokens(
+        self, chars: list[int], text_start: int
+    ) -> list[tuple[str, int, int]]:
         """Split ZSCII chars into tokens. Returns list of (text, start_addr, length)."""
         tokens: list[tuple[str, int, int]] = []
         i = 0
@@ -165,7 +169,11 @@ class Dictionary:
 
             # Collect a word
             start = i
-            while i < len(chars) and chars[i] != ord(" ") and chars[i] not in self.separators:
+            while (
+                i < len(chars)
+                and chars[i] != ord(" ")
+                and chars[i] not in self.separators
+            ):
                 i += 1
 
             word = "".join(chr(chars[j]) for j in range(start, i))

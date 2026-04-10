@@ -17,8 +17,9 @@ class Screen:
         print(buf.getvalue())
     """
 
-    def __init__(self, version: int, width: int = 80,
-                 output: io.TextIOBase | None = None):
+    def __init__(
+        self, version: int, width: int = 80, output: io.TextIOBase | None = None
+    ):
         self.version = version
         self.width = width
         self.current_window = 0  # 0=lower, 1=upper
@@ -81,7 +82,7 @@ class Screen:
                 last_space = self._buffer.rfind(" ")
                 if last_space > 0:
                     self._write(self._buffer[:last_space] + "\n")
-                    self._buffer = self._buffer[last_space + 1:]
+                    self._buffer = self._buffer[last_space + 1 :]
                 else:
                     self._write(self._buffer + "\n")
                     self._buffer = ""
@@ -172,9 +173,9 @@ class Screen:
         """Display V3 status line."""
         self.flush()
         # Format: location left-justified, score/time right-justified
-        status = location[:self.width - len(score_or_time) - 1]
+        status = location[: self.width - len(score_or_time) - 1]
         padding = self.width - len(status) - len(score_or_time)
         if padding < 1:
             padding = 1
         line = status + " " * padding + score_or_time
-        self._write("\n[" + line[:self.width - 2] + "]\n")
+        self._write("\n[" + line[: self.width - 2] + "]\n")

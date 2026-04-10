@@ -97,7 +97,7 @@ class Header:
         """Write interpreter capabilities into the header."""
         if self.version >= 4:
             mem.write_byte(H_INTERPRETER_NUMBER, 6)  # MS-DOS
-            mem.write_byte(H_INTERPRETER_VERSION, ord('P'))  # 'P' for pyfrotz
+            mem.write_byte(H_INTERPRETER_VERSION, ord("P"))  # 'P' for pyfrotz
             mem.write_byte(H_SCREEN_ROWS, 255)
             mem.write_byte(H_SCREEN_COLS, 80)
 

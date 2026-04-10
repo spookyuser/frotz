@@ -13,8 +13,9 @@ def main():
         description="pyfrotz - A Python Z-Machine interpreter",
     )
     parser.add_argument("story_file", help="Path to Z-code story file (.z3, .z5, etc.)")
-    parser.add_argument("-s", "--seed", type=int, default=None,
-                        help="Random number seed")
+    parser.add_argument(
+        "-s", "--seed", type=int, default=None, help="Random number seed"
+    )
     args = parser.parse_args()
 
     try:
@@ -40,6 +41,7 @@ def main():
 
     if args.seed is not None:
         import random
+
         vm._rng = random.Random(args.seed)
 
     try:

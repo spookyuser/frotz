@@ -203,7 +203,7 @@ class TestStepAPIZ5:
     def test_output_isolation(self, z5_data: bytes):
         """Each step's output contains only that turn's text."""
         vm = ZMachine(z5_data)
-        startup = vm.step()
+        vm.step()
         look = vm.step("look")
         # The title should NOT appear in the look output
         assert "Spider And Web" not in look["output"]
@@ -253,6 +253,6 @@ class TestStepAPIZ8:
     def test_output_isolation(self, z8_data: bytes):
         """Each step's output contains only that turn's text."""
         vm = ZMachine(z8_data)
-        startup = vm.step()
+        vm.step()
         look = vm.step("look")
         assert "Spider And Web" not in look["output"]

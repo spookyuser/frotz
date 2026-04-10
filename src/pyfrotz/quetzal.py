@@ -51,7 +51,7 @@ def save_game(vm: ZMachine, filename: str) -> bool:
                     f.write(struct.pack(">H", val))
 
         return True
-    except (OSError, IOError):
+    except OSError, IOError:
         return False
 
 
@@ -85,17 +85,22 @@ def restore_game(vm: ZMachine, filename: str) -> bool:
 
             num_frames = struct.unpack(">H", f.read(2))[0]
             from .stack import RoutineFrame
+
             frames = []
             for _ in range(num_frames):
                 return_pc = struct.unpack(">I", f.read(4))[0]
                 num_locals = struct.unpack(">B", f.read(1))[0]
-                local_vars = [struct.unpack(">H", f.read(2))[0] for _ in range(num_locals)]
+                local_vars = [
+                    struct.unpack(">H", f.read(2))[0] for _ in range(num_locals)
+                ]
                 arg_count = struct.unpack(">B", f.read(1))[0]
                 sv = struct.unpack(">H", f.read(2))[0]
                 store_var = None if sv == 0xFFFF else sv
                 discard = struct.unpack(">B", f.read(1))[0]
                 stack_size = struct.unpack(">H", f.read(2))[0]
-                eval_stack = [struct.unpack(">H", f.read(2))[0] for _ in range(stack_size)]
+                eval_stack = [
+                    struct.unpack(">H", f.read(2))[0] for _ in range(stack_size)
+                ]
                 frame = RoutineFrame(
                     return_pc=return_pc,
                     local_vars=local_vars,
@@ -110,5 +115,5 @@ def restore_game(vm: ZMachine, filename: str) -> bool:
             vm.pc = pc
 
         return True
-    except (OSError, IOError, struct.error):
+    except OSError, IOError, struct.error:
         return False
