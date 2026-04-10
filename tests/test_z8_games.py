@@ -48,12 +48,16 @@ class TestZ8Games:
         assert "THE Z-FILES" in output
         assert "legally available" in output
 
-    def test_the_first_mile_test_drive_startup_text(self, the_first_mile_test_drive_data: bytes):
+    def test_the_first_mile_test_drive_startup_text(
+        self, the_first_mile_test_drive_data: bytes
+    ):
         output = _run(the_first_mile_test_drive_data, [])
         assert "Las Vegas" in output
         assert "Dead Rock, Arkansas" in output
 
-    def test_the_first_mile_test_drive_step_api_startup(self, the_first_mile_test_drive_data: bytes):
+    def test_the_first_mile_test_drive_step_api_startup(
+        self, the_first_mile_test_drive_data: bytes
+    ):
         vm = ZMachine(the_first_mile_test_drive_data)
         result = vm.step()
         output = result["output"]
