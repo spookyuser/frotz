@@ -17,3 +17,5 @@ src/common/git_hash.h
 *.z?
 src/test/*mem
 src/test/*rec
+__pycache__/
+*.pyc
