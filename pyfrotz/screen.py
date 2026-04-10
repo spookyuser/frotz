@@ -131,7 +131,8 @@ class Screen:
                 self._memory_stream_data.append([])
         elif stream < 0:
             s = -stream
-            self._output_streams.discard(s)
+            if s != 3:
+                self._output_streams.discard(s)
             if s == 3 and self._memory_stream_data:
                 data = self._memory_stream_data.pop()
                 table_addr, orig_addr = self._memory_streams.pop()
@@ -139,6 +140,8 @@ class Screen:
                     self._memory.write_word(orig_addr, len(data))
                     for i, ch in enumerate(data):
                         self._memory.write_byte(table_addr + i, ch)
+                if not self._memory_stream_data:
+                    self._output_streams.discard(3)
 
     def input_stream(self, stream: int):
         """Select input stream (0=keyboard, 1=file). Mostly no-op."""
