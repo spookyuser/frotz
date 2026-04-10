@@ -1,6 +1,7 @@
 """Z-Machine virtual machine - the main orchestrator."""
 
 from __future__ import annotations
+import io as IO_module
 import random as pyrandom
 
 from .memory import Memory
@@ -25,9 +26,21 @@ def to_unsigned(v: int) -> int:
 
 
 class ZMachine:
-    """The Z-Machine virtual machine."""
+    """The Z-Machine virtual machine.
 
-    def __init__(self, story_data: bytes):
+    For library use, supply *input_lines* and *output* to run
+    non-interactively::
+
+        import io
+        buf = io.StringIO()
+        vm = ZMachine(story_data, input_lines=["look", "quit"], output=buf)
+        vm.run()
+        print(buf.getvalue())
+    """
+
+    def __init__(self, story_data: bytes, *,
+                 input_lines: list[str] | None = None,
+                 output: IO_module.TextIOBase | None = None):
         self.memory = Memory(story_data)
         self.header = Header.from_memory(self.memory)
 
@@ -38,8 +51,8 @@ class ZMachine:
         self.header.setup_interpreter_fields(self.memory)
 
         self.stack = CallStack()
-        self.screen = Screen(self.header.version)
-        self.io = IO()
+        self.screen = Screen(self.header.version, output=output)
+        self.io = IO(input_lines=input_lines)
 
         self.text = TextEngine(
             self.memory, self.header.version,
