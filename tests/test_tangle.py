@@ -34,6 +34,13 @@ def _run(story_data: bytes, commands: list[str]) -> str:
     return buf.getvalue()
 
 
+def _step_output(result: dict[str, object]) -> str:
+    """Return typed step output for assertions."""
+    output = result["output"]
+    assert isinstance(output, str)
+    return output
+
+
 # ---- fixtures -------------------------------------------------------
 
 
@@ -176,7 +183,7 @@ class TestStepAPIZ5:
         """step() with no command returns the startup text."""
         vm = ZMachine(z5_data)
         result = vm.step()
-        assert "Spider And Web" in result["output"]
+        assert "Spider And Web" in _step_output(result)
         assert result["finished"] is False
 
     def test_look(self, z5_data: bytes):
@@ -184,7 +191,7 @@ class TestStepAPIZ5:
         vm = ZMachine(z5_data)
         vm.step()  # startup
         result = vm.step("look")
-        assert "End of Alley" in result["output"]
+        assert "End of Alley" in _step_output(result)
         assert result["finished"] is False
 
     def test_multiple_steps(self, z5_data: bytes):
@@ -194,11 +201,11 @@ class TestStepAPIZ5:
         look = vm.step("look")
         south = vm.step("south")
         # startup has the title
-        assert "Spider And Web" in startup["output"]
+        assert "Spider And Web" in _step_output(startup)
         # look has the room description but not the title (that was in startup)
-        assert "End of Alley" in look["output"]
+        assert "End of Alley" in _step_output(look)
         # south moves to a new room
-        assert "Mouth of Alley" in south["output"]
+        assert "Mouth of Alley" in _step_output(south)
 
     def test_output_isolation(self, z5_data: bytes):
         """Each step's output contains only that turn's text."""
@@ -206,23 +213,23 @@ class TestStepAPIZ5:
         vm.step()
         look = vm.step("look")
         # The title should NOT appear in the look output
-        assert "Spider And Web" not in look["output"]
+        assert "Spider And Web" not in _step_output(look)
 
     def test_examine(self, z5_data: bytes):
         """step('examine door') returns the door description."""
         vm = ZMachine(z5_data)
         vm.step()  # startup
         result = vm.step("examine door")
-        assert "naked sheet of metal" in result["output"]
+        assert "naked sheet of metal" in _step_output(result)
 
     def test_movement_roundtrip(self, z5_data: bytes):
         """step() tracks state across moves."""
         vm = ZMachine(z5_data)
         vm.step()  # startup
         south = vm.step("south")
-        assert "Mouth of Alley" in south["output"]
+        assert "Mouth of Alley" in _step_output(south)
         north = vm.step("north")
-        assert "End of Alley" in north["output"]
+        assert "End of Alley" in _step_output(north)
 
 
 class TestStepAPIZ8:
@@ -230,7 +237,7 @@ class TestStepAPIZ8:
         """step() with no command returns the startup text."""
         vm = ZMachine(z8_data)
         result = vm.step()
-        assert "Spider And Web" in result["output"]
+        assert "Spider And Web" in _step_output(result)
         assert result["finished"] is False
 
     def test_look(self, z8_data: bytes):
@@ -238,7 +245,7 @@ class TestStepAPIZ8:
         vm = ZMachine(z8_data)
         vm.step()  # startup
         result = vm.step("look")
-        assert "End of Alley" in result["output"]
+        assert "End of Alley" in _step_output(result)
 
     def test_multiple_steps(self, z8_data: bytes):
         """Multiple step() calls each return their own turn's output."""
@@ -246,13 +253,13 @@ class TestStepAPIZ8:
         startup = vm.step()
         look = vm.step("look")
         south = vm.step("south")
-        assert "Spider And Web" in startup["output"]
-        assert "End of Alley" in look["output"]
-        assert "Mouth of Alley" in south["output"]
+        assert "Spider And Web" in _step_output(startup)
+        assert "End of Alley" in _step_output(look)
+        assert "Mouth of Alley" in _step_output(south)
 
     def test_output_isolation(self, z8_data: bytes):
         """Each step's output contains only that turn's text."""
         vm = ZMachine(z8_data)
         vm.step()
         look = vm.step("look")
-        assert "Spider And Web" not in look["output"]
+        assert "Spider And Web" not in _step_output(look)
